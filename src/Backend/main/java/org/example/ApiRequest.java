@@ -2,48 +2,38 @@ package org.example;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 
 public class ApiRequest {
 
     private static String canvasApiUrl;
+    private static String accessToken;
 
     public static void main(String[] args) {
         // Get the access token from the JSON file
-        String accessToken = getAccessTokenFromFile();
+        accessToken = getAccessTokenFromFile();
         if (accessToken != null) {
             System.out.println("Access Token: " + accessToken); // Print the access token (for testing)
 
-            // Set the Canvas API URL here
+            // Set the Canvas API URL
             setCanvasApiUrl();
 
-            // Now use the access token in the API call
+            // Now use the access token in the API call to create an event
             if (canvasApiUrl != null) {
-                try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-                    // Make the GET request to the Canvas API
-                    HttpGet request = new HttpGet(canvasApiUrl);
-                    // Add the Authorization header with Bearer token
-                    request.addHeader("Authorization", "Bearer " + accessToken);
-
-                    // Execute the request
-                    try (CloseableHttpResponse response = httpClient.execute(request)) {
-                        // Convert the response to a string
-                        String jsonResponse = EntityUtils.toString(response.getEntity());
-                        // Print the response (JSON data)
-                        System.out.println("Response: " + jsonResponse);
-                    }
-                } catch (IOException | ParseException e) {
-                    e.printStackTrace();
-                }
+                createCalendarEvent();
             } else {
                 System.err.println("Canvas API URL is not set.");
             }
@@ -51,11 +41,48 @@ public class ApiRequest {
             System.err.println("Access token not found.");
         }
     }
-    private static void setCanvasApiUrl() {
-        canvasApiUrl = "https://canvas.ltu.se/api/v1/courses"; // Replace with your Canvas domain and the correct endpoint
+
+    private static void createCalendarEvent() {
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            // Create a POST request for creating a calendar event
+            HttpPost request = new HttpPost(canvasApiUrl + "/calendar_events.json");
+
+            // Create the form data payload
+            String formData = "calendar_event[context_code]=user_146018" +
+                    "&calendar_event[title]=Test" +
+                    "&calendar_event[start_at]=2025-01-04T14:00:00" +
+                    "&calendar_event[end_at]=2025-01-04T14:45:00" +
+                    "&calendar_event[description]=testing";
+
+            // Set the body of the request using StringEntity
+            StringEntity entity = new StringEntity(formData, ContentType.APPLICATION_FORM_URLENCODED);
+            request.setEntity(entity);
+
+            // Add the Authorization header with Bearer token
+            request.addHeader("Authorization", "Bearer " + accessToken);
+
+            try (CloseableHttpResponse response = httpClient.execute(request)) {
+                // Get the status code of the response
+                int statusCode = response.getCode();
+
+                // Convert the response to a string
+                String jsonResponse = EntityUtils.toString(response.getEntity());
+
+                // Check if the response is successful
+                if (statusCode == 201) {
+                    System.out.println("Request was created!");
+                } else {
+                    System.out.println("Request failed with status code: " + statusCode);
+                }
+            }
+        } catch (IOException | ParseException e) {
+            e.printStackTrace();
+        }
     }
 
-
+    private static void setCanvasApiUrl() {
+        canvasApiUrl = "https://canvas.ltu.se/api/v1"; // Replace with your Canvas domain
+    }
 
     // Method to read the access token from the JSON file
     private static String getAccessTokenFromFile() {
