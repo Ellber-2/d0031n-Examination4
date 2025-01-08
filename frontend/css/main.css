@@ -24,11 +24,26 @@ h1 {
     text-shadow: 2px 2px 4px #000000;
 }
 
+input[type="text"], input[type="checkbox"] {
+    display: block;
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+}
+
+label {
+    display: block;
+    margin: 10px 0 5px;
+    color: #333;
+}
+
 input[type="text"] {
     display: block;
-    width: calc(40% - 22px);
+    width: calc(70% - 22px);
     padding: 10px;
-    margin: 0 auto 20px;
+    margin: 10px auto;
     border: 1px solid #ccc;
     border-radius: 10px;
 }
@@ -60,18 +75,36 @@ button:hover {
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: auto;
+    overflow: hidden;
     background-color: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .lightbox-content {
     background-color: #fff;
-    margin: 15% auto;
+    margin: auto;
     padding: 20px;
     border: 1px solid #888;
     width: 80%;
     max-width: 500px;
     text-align: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) translateY(50px);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+}
+
+.lightbox.show {
+    display: block;
+    opacity: 1;
+}
+
+.lightbox-content.show {
+    transform: translate(-50%, -50%) translateY(0);
+    opacity: 1;
 }
 
 .close {
